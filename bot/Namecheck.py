@@ -1,19 +1,23 @@
-def Namecheck(name,against,sender):
-    __doc__ = "False = No match, True = Match"
-    for i in against:
-        if i.lower() in name.lower() and sender.lower() not in name.lower():
+def Namecheck(name, against, sender):
+    """Return True for a match, otherwise False."""
+    lowered_name = name.lower()
+    lowered_sender = sender.lower()
+
+    for candidate in against:
+        if candidate.lower() in lowered_name and lowered_sender not in lowered_name:
             return True
-        else:
-            pass
-def Namecheck_dict(name,against):
-    __doc__ = "False = No match, True = Match"
-    fuse = False
-    for a,i in against.items():
-        if i.lower() in name.lower():
-            fuse = True
-            break
-        else:
-            pass
-    return fuse,a
-    
-    
+
+    return False
+
+
+def Namecheck_dict(name, against):
+    """Return (matched, key); an empty dictionary returns (False, None)."""
+    lowered_name = name.lower()
+    last_key = None
+
+    for key, candidate in against.items():
+        last_key = key
+        if candidate.lower() in lowered_name:
+            return True, key
+
+    return False, last_key

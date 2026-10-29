@@ -2,7 +2,7 @@
 
 proc/get_base_turf(var/z)
 	if(!using_map.base_turf_by_z["[z]"])
-		using_map.base_turf_by_z["[z]"] = /turf/space
+		using_map.base_turf_by_z["[z]"] = /turf/simulated/floor/grass
 	return using_map.base_turf_by_z["[z]"]
 
 //An area can override the z-level base turf, so our solar array areas etc. can be space-based.

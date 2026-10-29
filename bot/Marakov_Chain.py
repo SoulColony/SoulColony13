@@ -1,203 +1,192 @@
 import pickle
 import random
-import os
-import sys
-import time
+from pathlib import Path
+
 import CORE_DATA
-def merge(d1, d2, merger=lambda x,y:x+y):
-  #http://stackoverflow.com/questions/38987/how-can-i-merge-two-python-dictionaries-as-a-single-expression
-  result = dict(d1)
-  for k,v in d2.iteritems():
-    if k in result:
-      result[k] = merger(result[k], v)
-    else:
-      result[k] = v
-  return result
+
+
+DATA_DIR = Path("Marakov")
+CACHE_PATH = DATA_DIR / "Marakov.Cache"
+PUNCTUATION = "\",.?!'()[]{}"
+STRIP_TABLE = str.maketrans("", "", ",.?!()[]\"'")
+CONTINUATIONS = {
+    "but", "who", "gets", "im", "most", "is", "it", "if", "then",
+    "after", "over", "every", "of", "on", "or", "as", "the",
+    "wheather", "whether", "a", "to", "and", "for",
+}
+
+
+def merge(d1, d2, merger=lambda x, y: x + y):
+    result = dict(d1)
+
+    for key, value in d2.items():
+        if key in result:
+            result[key] = merger(result[key], value)
+        else:
+            result[key] = value
+
+    return result
+
+
+def _load(path):
+    with Path(path).open("rb") as source:
+        data = pickle.load(source, encoding="latin1")
+
+    if not isinstance(data, dict):
+        raise ValueError("Expected a dictionary of word lists")
+
+    if any(
+        not isinstance(key, str)
+        or not isinstance(values, list)
+        or any(not isinstance(value, str) for value in values)
+        for key, values in data.items()
+    ):
+        raise ValueError("Expected string keys and lists of strings")
+
+    return data
+
+
+def _save(path, data):
+    with Path(path).open("wb") as destination:
+        pickle.dump(data, destination)
+
+
+def _is_url(word):
+    word = word.lower()
+    return word.startswith(
+        ("http://", "https://", "www.", "http:" + "\\" * 2)
+    )
+
+
 full_data = {}
 imported_data = {}
-try:
-  tiedostot = os.listdir("Marakov")
-except:
-  os.mkdir("Marakov")
-  tiedostot = os.listdir("Marakov")
-else:
-  pass
-  
-listaus = []
-for i in tiedostot:
-  if "marakov." not in i.lower():
-    pass
-  else:
-    listaus.append(i)
-for i in listaus:
-  tiedosto = open("Marakov/"+i,"r")
-  old_size = len(full_data.keys())
-  if i != "Marakov.Cache":
-    imported_data = merge(imported_data,pickle.load(tiedosto))
-    print "Added contents of "+i+" (Import)"
-    print "Entries: "+str(len(imported_data))
-  else:
-    full_data = merge(full_data,pickle.load(tiedosto))
-    new_size = len(full_data.keys())
-    print "Added contents of "+i
-    print "Entries: "+str(new_size-old_size)
-  time.sleep(0.1)
+DATA_DIR.mkdir(parents=True, exist_ok=True)
+
+for path in sorted(DATA_DIR.iterdir()):
+    if not path.is_file() or "marakov." not in path.name.lower():
+        continue
+
+    loaded = _load(path)
+
+    if path.name == "Marakov.Cache":
+        old_size = len(full_data)
+        full_data = merge(full_data, loaded)
+        print("Added contents of " + path.name)
+        print("Entries: " + str(len(full_data) - old_size))
+    else:
+        imported_data = merge(imported_data, loaded)
+        print("Added contents of " + path.name + " (Import)")
+        print("Entries: " + str(len(imported_data)))
+
 
 def give_data(data):
-  state = False
-  for a,b in zip(data.split(" "),data.split(" ")[1:]):
-    a = a.lower().replace(",","").replace(".","").replace("?","").replace("!","").replace("(","").replace(")","").replace("[","").replace("]","").replace('"',"").replace("'","")
-    b = b.lower().replace(",","").replace(".","").replace("?","").replace("!","").replace("(","").replace(")","").replace("[","").replace("]","").replace('"',"").replace("'","")
-    if a not in [CORE_DATA.prefix+"marakov"]+CORE_DATA.SName:
-      state = True
-      if a[:7] == "http://" or a[:7] == "http:\\\\" or a[:4] == "www.":
-        pass
-      else:
-        try:
-          if b not in full_data[a]:
-            full_data[a].append(b)
-        except:
-          try:
-            if b not in imported_data[a]:
-              pass
-          except:
-            full_data[a] = []
-            full_data[a].append(b)
-  if state == True:
-    tiedosto = open("Marakov/Marakov.Cache","w")
-    pickle.dump(full_data,tiedosto)
-    tiedosto.close()
+    state = False
+    words = data.split(" ")
+    excluded = [CORE_DATA.prefix + "marakov"] + CORE_DATA.SName
+
+    for a, b in zip(words, words[1:]):
+        a = a.lower().translate(STRIP_TABLE)
+        b = b.lower().translate(STRIP_TABLE)
+
+        if a in excluded:
+            continue
+
+        state = True
+
+        if _is_url(a):
+            continue
+
+        if a in full_data:
+            if b not in full_data[a]:
+                full_data[a].append(b)
+        elif a not in imported_data:
+            full_data[a] = [b]
+
+    if state:
+        _save(CACHE_PATH, full_data)
+
+
 def form_sentence(argument=None):
-  length = 0
-  attempts = 0
-  while attempts < 20:
     sentence = []
-    if argument != None:
-      a = argument
-    else:
-      try:
-        a = random.choice(full_data.keys())
-      except IndexError:
-        try:
-          b = random.choice(imported_data.keys())
-        except IndexError:
-          attempts = 999
-          return "No sentences formable at all"
-    sentence.append(a)
-    length = 0
-    attempts += 1
-    while length < 12 or sentence[-1].lower() in ["but","who","gets","im","most","is","it","if","then","after","over","every","of","on","or","as","the","wheather","whether","a","to","and","for"] and length < 24:
-      try:
-        b = random.choice(full_data[a])
-      except:
-        try:
-          b = random.choice(imported_data[a])
-        except IndexError:
-          break
-        except KeyError:
-          break
+
+    for _ in range(20):
+        if argument is not None:
+            a = argument
+        elif full_data:
+            a = random.choice(list(full_data))
+        elif imported_data:
+            a = random.choice(list(imported_data))
         else:
-          sentence.append(b)
-          length += 1
-          a = b
-      else:
-        sentence.append(b)
-        length += 1
-        a = b
-    if len(sentence) > 5:
-      argument = None
-      return sentence
-    else:
-      pass
-  argument = None
-  return sentence
+            return "No sentences formable at all"
+
+        sentence = [a]
+        length = 0
+
+        while length < 12 or (
+            sentence[-1].lower() in CONTINUATIONS and length < 24
+        ):
+            options = full_data.get(a) or imported_data.get(a)
+            if not options:
+                break
+
+            a = random.choice(options)
+            sentence.append(a)
+            length += 1
+
+        if len(sentence) > 5:
+            return sentence
+
+    return sentence
+
+
 def remdata(arg):
-  try:
-    del(full_data[arg])
-  except:
-    print "There is no such data"
-  else:
-    tiedosto = open("Marakov/Marakov.Cache","w")
-    pickle.dump(full_data,tiedosto)
-    tiedosto.close()
-def remobject(arg1,arg2):
-  try:
-    del(full_data[arg1][full_data[arg1].index(arg2)])
-  except ValueError:
-    print "No such object"
-  except KeyError:
-    print "No such data"
-  else:
-    tiedosto = open("Marakov/Marakov.Cache","w")
-    pickle.dump(full_data,tiedosto)
-    tiedosto.close()
-def convert(filename_from,filename_to):
-  try:
-    tiedosto = open(filename_from,"r")
-    data = pickle.load(tiedosto)
-    tiedosto.close()
-  except:
+    if arg not in full_data:
+        print("There is no such data")
+        return
+
+    del full_data[arg]
+    _save(CACHE_PATH, full_data)
+
+
+def remobject(arg1, arg2):
     try:
-      tiedosto.close()
-    except:
-      pass
-    print "Error!"
-  else:
-    for lista in data.keys():
-      try:
-        a = lista[-1]
-      except IndexError:
-        pass
-      else:
-        if lista[-1] in """",.?!'()[]{}""" and not lista.islower():
-          if lista[:-1].lower() in data.keys():
-            data[lista[:-1].lower()] += data[lista]
-            print "Added "+str(len(data[lista]))+" Objects from "+lista+" To "+lista[:-1].lower()
-            del(data[lista])
-          else:
-            data[lista[:-1].lower()] = data[lista]
-            print lista+" Is now "+lista[:-1].lower()
-            del(data[lista])
-        elif lista[-1] in """",.?!'()[]{}""" and lista.islower():
-          if lista[:-1] in data.keys():
-            data[lista[:-1]] += data[lista]
-            print "Added "+str(len(data[lista]))+" Objects from "+lista+" To "+lista[:-1]
-            del(data[lista])
-          else:
-            data[lista[:-1]] = data[lista]
-            print lista+" Is now "+lista[:-1]
-            del(data[lista])
-        elif not lista.islower():
-          if lista.lower() in data.keys():
-            data[lista.lower()] += data[lista]
-            print "Added "+str(len(data[lista]))+" Objects from "+lista+" To "+lista.lower()
-            del(data[lista])
-          else:
-            data[lista.lower()] = data[lista]
-            print lista+" Is now "+lista.lower()
-            del(data[lista])
-        
-        
-    for a in data.keys():
-      for b in data[a]:
-        if b.lower()[:7] == "http://" or b.lower()[:7] == "http:\\\\" or b.lower()[:4] == "www.":
-          data[a].pop(b)
-        else:
-          try:
-            if b[-1] in """",.?!'()[]{}""" and not b.islower() and not b.isdigit():
-              data[a].pop(data[a].index(b))
-              data[a].append(b[:-1].lower())
-              print a+" | "+b +" -> "+b[:-1].lower()
-            elif b[-1] in """",.?!'()[]{}""" and b.islower():
-              data[a].pop(data[a].index(b))
-              data[a].append(b[:-1].lower())
-              print a+" | "+b +" -> "+b[:-1]
-            elif not b.islower() and not b.isdigit():
-              data[a].pop(data[a].index(b))
-              data[a].append(b.lower())
-              print a+" | "+b +" -> "+b.lower()
-          except IndexError: #If it has no letters.. well.. yeah.
-            data[a].pop(data[a].index(b))
-            print "Removed a NULL object"
-    tiedosto = open(filename_to,"w")
-    pickle.dump(data,tiedosto)
+        full_data[arg1].remove(arg2)
+    except ValueError:
+        print("No such object")
+    except KeyError:
+        print("No such data")
+    else:
+        _save(CACHE_PATH, full_data)
+
+
+def convert(filename_from, filename_to):
+    try:
+        data = _load(filename_from)
+    except (OSError, EOFError, pickle.UnpicklingError, ValueError):
+        print("Error!")
+        return
+
+    # Build a new dictionary instead of mutating keys during iteration.
+    converted = {}
+
+    for key, values in data.items():
+        new_key = key
+
+        if new_key and new_key[-1] in PUNCTUATION:
+            new_key = new_key[:-1]
+
+        new_key = new_key.lower()
+        cleaned = []
+
+        for value in values:
+            if not value or _is_url(value):
+                continue
+
+            if value[-1] in PUNCTUATION:
+                value = value[:-1]
+
+            cleaned.append(value.lower())
+
+        converted.setdefault(new_key, []).extend(cleaned)
+
+    _save(filename_to, converted)

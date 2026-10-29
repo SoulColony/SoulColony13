@@ -1,24 +1,26 @@
 import pickle
-def save(filename,data,dnrw=0):
-  if dnrw == 1:
+
+
+def save(filename, data, dnrw=0):
+    mode = "xb" if dnrw == 1 else "wb"
+
+    if isinstance(data, str):
+        data = data.replace("http//", "http://")
+
     try:
-      tiedosto = open(filename,"r")
-    except:
-      tiedosto = open(filename,"w")
-    else:
-      return False
-  else:
-    tiedosto = open(filename,"w")
-    
-  if "http//" in data:
-    data = data.replace("http//","http://")
-  pickle.dump(data,tiedosto)
-  tiedosto.close()
+        with open(filename, mode) as destination:
+            pickle.dump(data, destination)
+    except FileExistsError:
+        if dnrw == 1:
+            return False
+        raise
+
+
 def load(filename):
-  try:
-    tiedosto = open(filename,"r")
-  except IOError:
-    return "ERROR ERROR ERROR ERR"
-  a = pickle.load(tiedosto)
-  tiedosto.close()
-  return a
+    try:
+        source = open(filename, "rb")
+    except OSError:
+        return "ERROR ERROR ERROR ERR"
+
+    with source:
+        return pickle.load(source, encoding="latin1")

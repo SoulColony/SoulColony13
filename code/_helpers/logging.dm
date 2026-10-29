@@ -161,6 +161,45 @@
 /proc/log_misc(text)
 	diary << "\[[time_stamp()]]MISC: [text][log_end]"
 
+/proc/log_tgui(
+    user,
+    message,
+    context,
+    datum/tgui_window/window,
+    datum/src_object,
+)
+    var/entry = ""
+
+    // Insert user info
+    if(!user)
+        entry += "<nobody>"
+    else if(istype(user, /mob))
+        var/mob/M = user
+        entry += "[M.ckey] (as [M] at [M.x],[M.y],[M.z])"
+    else if(istype(user, /client))
+        var/client/C = user
+        entry += "[C.ckey]"
+
+    // Insert context
+    if(context)
+        entry += " in [context]"
+    else if(window)
+        entry += " in [window.id]"
+
+    // Resolve src_object
+    if(!src_object && window?.locked_by)
+        src_object = window.locked_by.src_object
+
+    // Insert src_object info
+    if(src_object)
+        entry += "\nUsing: [src_object.type] \ref[src_object]"
+
+    // Insert message
+    if(message)
+        entry += "\n[message]"
+
+    diary << "\[[time_stamp()]]TGUI: [entry][log_end]"
+
 /proc/log_unit_test(text)
 	world.log << "## UNIT_TEST: [text]"
 

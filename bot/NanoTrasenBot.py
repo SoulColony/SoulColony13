@@ -13,12 +13,14 @@
 ################# DEBUG STUFF #####################
 import sys
 import CORE_DATA
+import Whoopshopchecker
 
-import urllib2
+import urllib.request, urllib.error, urllib.parse
 
 
 import socket
 import irchat
+from functools import reduce
    
    
 ################## END OF DEBUG STUFF ##############
@@ -29,7 +31,7 @@ write_youtube_to_file = True #True = YTCV4 will load, false = YTCV3 will load
 try:
    import psyco
 except ImportError:
-   print 'Psyco not installed, the program will just run slower'
+   print('Psyco not installed, the program will just run slower')
    psyco_exists = False
    if write_to_a_file:
       try:
@@ -38,13 +40,13 @@ except ImportError:
          with open("psycodownload.txt","w") as tiedosto:
             tiedosto.write("http://www.voidspace.org.uk/python/modules.shtml#psyco")
             tiedosto.write("\nhttp://psyco.sourceforge.net/download.html")
-         print "Check psycodownload.txt for a link"
+         print("Check psycodownload.txt for a link")
       else:
-         print "For god's sake, open psycodownload.txt"
+         print("For god's sake, open psycodownload.txt")
          tiedosto.close()
    else:
-      print "WINDOWS: http://www.voidspace.org.uk/python/modules.shtml#psyco"
-      print "LINUX: http://psyco.sourceforge.net/download.html"
+      print("WINDOWS: http://www.voidspace.org.uk/python/modules.shtml#psyco")
+      print("LINUX: http://psyco.sourceforge.net/download.html")
 else:
    psyco_exists = True
    
@@ -67,7 +69,7 @@ import Marakov_Chain
 import Namecheck # Namecheck
 import Weather
 #SLOWER THAN RANDOM.CHOICE
-import thread
+import _thread
 import random
 import Shortname # shortname
 import subprocess
@@ -92,7 +94,7 @@ if psyco_exists:
       return func.__name__+" Psycofied"
    for a in [rtd,srtd,C_heaortai.heaortai,sbna,YTCV2,fsample,C_rot13.rot13,C_eightball.eightball,fsample,
              C_eightball.eightball,C_sarcasticball.sarcasticball,Marakov_Chain.form_sentence,Marakov_Chain.give_data]:
-      print psyco_bond(a)
+      print(psyco_bond(a))
 
 global dictionary
 global Name,SName
@@ -189,34 +191,34 @@ tell_list = {}
 if CORE_DATA.DISABLE_ALL_NON_MANDATORY_SOCKET_CONNECTIONS:
    nudgeable = False
 try:
-   with open("replacenames.cache","r") as tiedosto:
+   with open("replacenames.cache","rb") as tiedosto:
       replacenames = pickle.load(tiedosto)
-   for i in replacenames.values():
+   for i in list(replacenames.values()):
       if len(i) > call_me_max_length:
-         replacenames[replacenames.keys()[replacenames.values().index(i)]] = i[:call_me_max_length]
-         with open("replacenames.cache","w") as tiedosto:
+         replacenames[list(replacenames.keys())[list(replacenames.values()).index(i)]] = i[:call_me_max_length]
+         with open("replacenames.cache","wb") as tiedosto:
             pickle.dump(replacenames,tiedosto)
       if "[\0x01]" in i.lower() or "[\\0x01]" in i.lower():
          i = i.replace("[\0x01]","")
          i = i.replace("[\0X01]","")
          i = i.replace("[\\0x01]","")
          i = i.replace("[\\0X01]","")
-         print "NAME CORRECTED"
+         print("NAME CORRECTED")
 except IOError: #File not found
    replacenames = {}
 except EOFError: #Cache corrupt
    replacenames = {}
-   print "replacenames.cache is corrupt and couldn't be loaded."
+   print("replacenames.cache is corrupt and couldn't be loaded.")
 try:
-   with open("peopleheknows.cache","r") as tiedosto:
+   with open("peopleheknows.cache","rb") as tiedosto:
       peopleheknows = pickle.load(tiedosto)
 except IOError:
    peopleheknows = [[],[]]
-   with open("peopleheknows.cache","w") as tiedosto:
+   with open("peopleheknows.cache","wb") as tiedosto:
       pass
 except EOFError:
    peopleheknows = [[],[]]
-   print "peopleheknows.cache is corrupt and couldn't be loaded."
+   print("peopleheknows.cache is corrupt and couldn't be loaded.")
 dictionary = {1:"1 - Crit. Fail", 2:"2 - Failure",
               3:"3 - Partial Success", 4:"4 - Success",
               5:"5 - Perfect", 6:"6 - Overkill"}
@@ -263,7 +265,6 @@ if nudgeable:
          
          def nudgereceiver():
             import pickle
-            global conn,channel
             port = 45678
             backlog = 5
             size = 1024
@@ -280,7 +281,7 @@ if nudgeable:
                   conn.privmsg(truedata["ip"],"PRIVATE ANNOUNCEMENT : "+str(" ".join(truedata["data"])))
                else:
                   conn.privmsg(channel,"AUTOMATIC ANNOUNCEMENT : "+str(truedata["ip"])+" | "+str(" ".join(truedata["data"])))
-         thread.start_new_thread(nudgereceiver,())
+         _thread.start_new_thread(nudgereceiver,())
 tiedosto = open(targetdirectory+"NanoTrasenBot.py","r")
 commands = []
 fragment = "if cocheck"
@@ -331,28 +332,27 @@ questions = ["Is USER nicer than USER?","Do you like me?","Is SELF a good name?"
 if optimize_fml:
    pregenned_fml = os.listdir(targetdirectory+"fmlquotes")
 if optimize_greeting:
-   morning = xrange(6,12)
-   afternoon = xrange(12,15)
-   evening = xrange(15,20)
+   morning = range(6,12)
+   afternoon = range(12,15)
+   evening = range(15,20)
 if aggressive_pinging:
    global backup
    backup = time.time()
    def aggressive_ping(delay,refresh):
       self_time = 0
-      global backup,disconnects,conn
       while disconnects < 5:
          if backup > self_time and time.time()-backup > delay:
             conn.send("PONG "+pongtarg)
-            print "Ponged"
+            print("Ponged")
             self_time = time.time()
          elif time.time()-self_time > delay:
             conn.send("PONG "+pongtarg)
-            print "Ponged"
+            print("Ponged")
             self_time = time.time()
          time.sleep(refresh)
-   thread.start_new_thread(aggressive_ping,(aggressive_pinging_delay,aggressive_pinging_refresh,))
+   _thread.start_new_thread(aggressive_ping,(aggressive_pinging_delay,aggressive_pinging_refresh,))
 def stop(sender,debug=1):
-   global disconnects, conn, operators,channel
+   global disconnects
    if type(sender) == tuple:
       if sender[0] == "127.0.0.1":
          sender = sender[0]+":"+str(sender[1])
@@ -365,7 +365,7 @@ def stop(sender,debug=1):
       else:
          access_granted = False
    if access_granted and debug:
-      print sender+":"+prefix+"stop"
+      print(sender+":"+prefix+"stop")
       if random.randint(0,100) == 50:
          conn.privmsg(channel,"Hammertime!")
       else:
@@ -378,13 +378,12 @@ def stop(sender,debug=1):
       return False
       
 def cocheck(command):
-   global influx
    if influx.lower()[0:len(command)] == command:
       return True
    else:
       return False
 def target(who,how_long):
-   global conn,channel,CALL_OFF,logbans,debug
+   global CALL_OFF
    start = time.time()
    conn.banon(targetchannel,who)
    sleep(int(how_long))
@@ -392,7 +391,7 @@ def target(who,how_long):
       conn.banoff(targetchannel,who)
       end = time.time()
       if debug:
-         print "Banned",who,"For",how_long,"seconds"
+         print("Banned",who,"For",how_long,"seconds")
       if logbans:
          with open(targetdirectory+"banlog/"+str(int(start))+"-"+str(int(end))+".txt","w") as tiedosto:
             tiedosto.write("Start of ban on "+who+":"+str(int(start)))
@@ -404,7 +403,7 @@ def target(who,how_long):
       CALL_OFF = False
       pass
 def replace():
-   global usable,conn,fixing,curtime
+   global usable, fixing, curtime
    waiting_time = 600
    if usable == True:
       conn.privmsg(targetchannel,sender+": It needs no replacing.")
@@ -426,7 +425,7 @@ def replace():
          usable = True
       fixing = False
 def autoRecv():
-   global disconnects,channel,conn,offensive_mode
+   global disconnects, offensive_mode
    for i in CORE_DATA.channels:
       conn.join(i)
       time.sleep(1)
@@ -436,11 +435,11 @@ def autoRecv():
    while True:
       check = time.time()
       if offensive_mode:
-         randnum = random.randint(0,maximum/division_when_active)
+         randnum = random.randint(0,maximum//division_when_active)
       else:
          randnum = random.randint(0,maximum)
       if randnum == 5:
-         print "RANDOM SWITCH IS NOW "+str(not offensive_mode).upper()
+         print("RANDOM SWITCH IS NOW "+str(not offensive_mode).upper())
          offensive_mode = not offensive_mode
       try:
          conn.recv()
@@ -456,42 +455,42 @@ def autoRecv():
          count = 0
          pausecount = 0
       if count > 9:
-         print "Suspecting a disconnect, pausing for 5 seconds"
+         print("Suspecting a disconnect, pausing for 5 seconds")
          sleep(5)
          pausecount += 1
       if pausecount > 3:
-         print "I have been disconnected!"
+         print("I have been disconnected!")
          conn.quit()
          disconnects += 1
          if disconnects > 2:
             pass
          else:
             sleep(2)
-            thread.start_new_thread(autoRecv,())
+            _thread.start_new_thread(autoRecv,())
          break
 if heavy_psyco and psyco_exists:
-   print "Doing a Heavy Psyco"
+   print("Doing a Heavy Psyco")
    psyco.bind(cocheck)
    psyco.bind(autoRecv)
    psyco.bind(target)
    psyco.bind(stop)
-   print "Heavy Psyco'd"
+   print("Heavy Psyco'd")
 elif heavy_psyco and not psyco_exists:
-   print "Heavy psyco couldn't be done because Psyco does not exist"
+   print("Heavy psyco couldn't be done because Psyco does not exist")
 try:
    conn = irchat.IRC ( Network, Port, Name, "NT", "NT", "Trasen" )
 except socket.error:
-   print "Connection failed!"
+   print("Connection failed!")
 else:
-   print Name+" is in!"
-thread.start_new_thread ( autoRecv, () )                   
+   print(Name+" is in!")
+_thread.start_new_thread ( autoRecv, () )                   
 sleep(1)
 while True:
    try:
       data = conn.dismantle ( conn.retrieve() )
    except:
       if debug:
-         print "Something odd detected with data"
+         print("Something odd detected with data")
       data = None
    if data:
       if len(data[1]) < 1:
@@ -505,7 +504,7 @@ while True:
                sleep(0.5)
          else:
             conn.send("PONG "+pongtarg)
-            print "Ponged"
+            print("Ponged")
          pass
       else:
          if data [ 1 ] [ 0 ] == 'PRIVMSG':
@@ -579,7 +578,7 @@ while True:
                if truesender.lower() in translateable:
                   if influx.isupper():
                      conn.privmsg(targetchannel,"Translation: "+influx.capitalize().replace(" i "," I "))
-                  elif offensive_mode and True in map(lambda x: x in influx.lower().split(" "),["i","you","he","she","they","those","we","them"]+people.split("-5|5|1-")):
+                  elif offensive_mode and True in [x in influx.lower().split(" ") for x in ["i","you","he","she","they","those","we","them"]+people.split("-5|5|1-")]:
                      arg = influx.lower().replace(",","").replace(".","").replace("!","").replace("?","").split(" ")
                      bup = arg
                      for i in arg:
@@ -604,7 +603,7 @@ while True:
                   if cocheck(prefix+"enable"):
                      enabled = True
                      if debug:
-                        print truesender+":"+prefix+"enable"
+                        print(truesender+":"+prefix+"enable")
                   elif cocheck(prefix+"stop"):
 #                     if debug:
 #                        print truesender+":"+prefix+"stop"
@@ -623,14 +622,14 @@ while True:
                   elif cocheck(prefix+"suggest "):
                      arg = influx.lower()[8+len(prefix):]
                      if debug:
-                        print truesender+":"+prefix+"suggest "+arg
+                        print(truesender+":"+prefix+"suggest "+arg)
                      with open(targetdirectory+"suggestions/suggestions_"+str(int(time.time()))+".txt","a") as tiedosto:
                         tiedosto.write(arg)
                      conn.privmsg(targetchannel,"Suggestion received")
             elif cocheck( prefix+"help "): #Space in front of the ( to make sure that my command finder does not pick this up.
                arg = " ".join(influx.split(" ")[1:]).lower()
                if debug:
-                  print truesender+":"+prefix+"help "+arg
+                  print(truesender+":"+prefix+"help "+arg)
                try:
                   conn.privmsg(targetchannel,D_help.everything[arg])
                except:
@@ -641,17 +640,17 @@ while True:
             elif cocheck(prefix+"help"):
                #tar = targetchannel
                if debug:
-                  print truesender+":"+prefix+"help"
+                  print(truesender+":"+prefix+"help")
                conn.privmsg(targetchannel,"All my commands are: "+reduce(lambda x,y:str(x)+"; "+str(y),commands))
             ### VERSION
             elif influx.lower() == prefix+"version":
                if debug:
-                  print truesender+":"+prefix+"version"
+                  print(truesender+":"+prefix+"version")
                conn.privmsg(targetchannel,Name+" "+pregen+" online at a %s Python %s.%s.%s, At your service." %(str(sys.platform),str(sys.version_info[0]),str(sys.version_info[1]),str(sys.version_info[2])))
             elif cocheck(prefix+"note ") and influx.count(" ") < 2:
                arg = influx.lower()[len(prefix)+5:]
                if debug:
-                  print truesender+":"+prefix+"note "+arg
+                  print(truesender+":"+prefix+"note "+arg)
                try:
                   a = arg[0]
                except IndexError:
@@ -690,7 +689,7 @@ while True:
                      conn.privmsg(targetchannel,sender+" : '"+result+"'")
             elif influx.lower() == prefix+"notes":
                if debug:
-                  print truesender+":"+prefix+"notes"
+                  print(truesender+":"+prefix+"notes")
                arg = os.listdir(targetdirectory+"memos/")
                arg2 = []
                arg3 = truesender.replace("|","_")+"_"
@@ -701,7 +700,7 @@ while True:
                   preprocess = " note: "
                else:
                   preprocess = " notes: "
-               if len(arg2) == 0:
+               if not arg:
                   conn.privmsg(targetchannel,sender+" : You have no notes saved")
                else:
                   conn.privmsg(targetchannel,sender+" : "+str(len(arg2))+preprocess+", ".join(arg2))
@@ -732,7 +731,7 @@ while True:
                            else:
                               os.remove(targetdirectory+"memos/"+"_"+arg4+".note")
                         except:
-                           conn.pivmsg(targetchannel,sender+" : Couldn't remove note")
+                           conn.privmsg(targetchannel,sender+" : Couldn't remove note")
                         else:
                            conn.privmsg(targetchannel,sender+" : Note removed")
                         pass
@@ -797,7 +796,7 @@ while True:
                   conn.privmsg(targetchannel,sender+" : I have been up for "+str(int(arg1[0]))+arg4+", "+str(int(arg2[0]))+arg5+", "+str(int(arg3[0]))+arg6+" and "+str(round(arg3[1],2))+" Seconds")
             elif cocheck(prefix+"purgemessages"):
                count = 0
-               for i,a in tell_list.items():
+               for i,a in list(tell_list.items()):
                   for b in a:
                      if "||From: "+truesender in b:
                         count += 1
@@ -821,7 +820,7 @@ while True:
                      pass
                if next_one != True and next_one != False:
                   #if ("^\^".join(tell_list.values())).count(truesender) >= offline_message_limit:
-                  if str(tell_list.values()).count("||From: "+truesender) >= offline_message_limit:
+                  if str(list(tell_list.values())).count("||From: "+truesender) >= offline_message_limit:
                      conn.privmsg(targetchannel,sender+" : Limit of "+str(offline_message_limit)+" reached! Use !purgemessages if you want to get rid of them!")
                   else:
                      try:
@@ -889,7 +888,7 @@ while True:
                      else:
                         pass
                   if debug:
-                     print truesender+":"+temdata
+                     print(truesender+":"+temdata)
                   arg = temdata
                   check = temdata.lower()
                   if check[0:5] == "https":
@@ -931,8 +930,8 @@ while True:
                   pass
                else:
                   conn.privmsg(targetchannel,sender+" : "+str(reduce(lambda x,y: x+" :-And-: "+y,temporal_list2)))
-            elif RegExpCheckerForWebPages("((http://)|(https://))|([a-zA-Z0-9]+[.])|([a-zA-Z0-9](3,)\.+[a-zA-Z](2,))",influx,1):
-               arg2 = RegExpCheckerForWebPages("(http://)|([a-zA-Z0-9]+[.])|([a-zA-Z0-9](3,)\.+[a-zA-Z](2,))",influx,0)
+            elif RegExpCheckerForWebPages("((http://)|(https://))|([a-zA-Z0-9]+[.])|([a-zA-Z0-9](3,)\\.+[a-zA-Z](2,))",influx,1):
+               arg2 = RegExpCheckerForWebPages("(http://)|([a-zA-Z0-9]+[.])|([a-zA-Z0-9](3,)\\.+[a-zA-Z](2,))",influx,0)
                if arg2 == 404:
                   pass
                else:
@@ -953,12 +952,12 @@ while True:
                      pass
             elif respond_of_course and "take over the" in influx.lower() or respond_of_course and "conquer the" in influx.lower():
                if debug:
-                  print truesender+":<RULE>:"+influx
+                  print(truesender+":<RULE>:"+influx)
                conn.privmsg(targetchannel,"Of course!")
             elif respond_khan and "khan" in influx.lower():
                if respond_khan:
                   if debug:
-                     print truesender+":<KHAN>:"+influx
+                     print(truesender+":<KHAN>:"+influx)
                   if "khan " in influx.lower():
                      conn.privmsg(targetchannel,"KHAAAAAAN!")
                   elif " khan" in influx.lower():
@@ -972,7 +971,7 @@ while True:
             elif respond_khan and influx.lower().count("k") + influx.lower().count("h") + influx.lower().count("a") + influx.lower().count("n") + influx.lower().count("!") + influx.lower().count("?") == len(influx):
                if "k" in influx.lower() and "h" in influx.lower() and "a" in influx.lower() and "n" in influx.lower():
                   if debug:
-                     print truesender+":<KHAN>:"+influx
+                     print(truesender+":<KHAN>:"+influx)
                   conn.privmsg(targetchannel,"KHAAAAN!")
             elif influx.split(" ")[0].lower() in ["thanks","danke","tack"] and len(influx.split(" ")) > 1 and influx.split(" ")[1].lower().replace("!","").replace("?","").replace(".","").replace(",","") in SName+[lowname]:
                conn.privmsg(targetchannel,"No problem %s" %(sender))
@@ -992,7 +991,7 @@ while True:
                   truesender_lower = truesender.lower()
                   arg3_lower = arg3.lower()
                   tell_checker = Namecheck.Namecheck(arg3_lower,users,truesender)
-                  for name in replacenames.values():
+                  for name in list(replacenames.values()):
                      if arg3_lower == name.lower():
                         tell_checker = True
                         break
@@ -1005,7 +1004,7 @@ while True:
                      pass
                   else:
                      replacenames[truesender] = arg3
-                     with open("replacenames.cache","w") as pickle_save:
+                     with open("replacenames.cache","wb") as pickle_save:
                         pickle.dump(replacenames,pickle_save)
                      conn.privmsg(targetchannel,sender+" : Calling you "+arg3+" From now on")
                else:
@@ -1014,7 +1013,7 @@ while True:
                conn.privmsg(targetchannel,sender+" : My birthday is on the 15th day of December.")
             elif influx.split(" ")[0].lower().replace(",","") in SName+[lowname] and "version" in influx.replace("?","").replace("!","").lower().split(" "):
                if debug == True:
-                  print truesender+":<VERSION>:%s Version" %(Name)
+                  print(truesender+":<VERSION>:%s Version" %(Name))
                conn.privmsg(targetchannel,sender+", My version is "+pregen)
             elif influx.split(" ")[0].lower().replace(",","") in SName+[lowname] and influx.lower().count(" or ") > 0 and len(influx.split(" ")[1:]) <= influx.lower().count("or") * 3:
                cut_down = influx.lower().split(" ")
@@ -1073,7 +1072,7 @@ while True:
                   conn.privmsg(targetchannel,sender+" : Marakov Output is now "+str(marakov))
                else:
                   conn.privmsg(targetchannel,sender+" : I can't let you access that")
-            elif personality_greeter == True and True in map(lambda x: x in influx.lower(),["greetings","afternoon","hi","hey","heya","hello","yo","hiya","howdy","hai","morning","mornin'","evening", "night","night", "evening","'sup","sup","hallo","hejssan"]):
+            elif personality_greeter == True and True in [x in influx.lower() for x in ["greetings","afternoon","hi","hey","heya","hello","yo","hiya","howdy","hai","morning","mornin'","evening", "night","night", "evening","'sup","sup","hallo","hejssan"]]:
                if comboer != "" and looptime - discard_combo_messages_time > comboer_time:
                   combo_check = sbna(["greetings","afternoon","hi","hey","heya","hello","yo","hiya","howdy","hai","morning","mornin'","evening", "night","night", "evening","'sup","sup","hallo","hejssan","all night"], #ONLY ONE OF THESE
                       ["greetings","afternoon","hi","hey","heya","hello","yo","hiya","howdy","hai","morning","mornin'","evening", "night","night", "evening","'sup","sup","hallo","hejssan"], #ATLEAST ONE OF THESE
@@ -1100,7 +1099,7 @@ while True:
                      pass
                   elif truesender not in operators:
                      if debug:
-                        print truesender+":<GREET>:"+influx
+                        print(truesender+":<GREET>:"+influx)
                      dice = random.randint(0,19)
                      if dice == 0:
                         conn.privmsg(targetchannel,"Well hello to you too "+sender)
@@ -1109,11 +1108,11 @@ while True:
                            hours = time.strftime("%H")
                            #time.strftime("%H:%M:%S") == 12:28:41
                            hours = int(hours)
-                           if hours in xrange(0,12):
+                           if hours in range(0,12):
                               conn.privmsg(targetchannel,"Good Morning "+sender)
-                           elif hours in xrange(12,15):
+                           elif hours in range(12,15):
                               conn.privmsg(targetchannel,"Good Afternoon "+sender)
-                           elif hours in xrange(15,20):
+                           elif hours in range(15,20):
                               conn.privmsg(targetchannel,"Good Evening "+sender)
                            else:
                               conn.privmsg(targetchannel,"Good Night "+sender)
@@ -1156,11 +1155,11 @@ while True:
                         conn.privmsg(targetchannel,"Statement: Greetings meatbag")
                      elif dice == 15: # Richard
                         hours = int(time.strftime("%H"))
-                        if hours in xrange(5,12):
+                        if hours in range(5,12):
                            conn.privmsg(targetchannel,"What are you doing talking at this time of the morning?")
-                        elif hours in xrange(12,15):
+                        elif hours in range(12,15):
                            conn.privmsg(targetchannel,"What are you doing talking at this time of the day?")
-                        elif hours in xrange(15,22):
+                        elif hours in range(15,22):
                            conn.privmsg(targetchannel,"What are you doing talking at this time of the evening?")
                         else:
                            conn.privmsg(targetchannel,"What are you doing talking at this time of the night?")
@@ -1178,7 +1177,7 @@ while True:
                         conn.privmsg(channel,"Hey everybody! I just noticed it's my birthday!")
                         time.sleep(0.5)
                         tag = random.choice(["birthday","robot+birthday","happy+birthday+robot"])
-                        arg1 = urllib2.urlopen("http://www.youtube.com/results?search_query=%s&page=&utm_source=opensearch"%tag)
+                        arg1 = urllib.request.urlopen("http://www.youtube.com/results?search_query=%s&page=&utm_source=opensearch"%tag)
                         arg1 = arg1.read().split("\n")
                         arg2 = []
                         for i in arg1:
@@ -1187,7 +1186,7 @@ while True:
                         arg3 = random.choice(arg2)
                         
                         conn.privmsg(channel,"Here's a video of '%s' which I found! %s (%s)"%(tag.replace("+"," "),"http://www.youtube.com"+arg3[arg3.find('/watch?v='):arg3.find('/watch?v=')+20],YTCV2("http://www.youtube.com"+arg3[arg3.find('/watch?v='):arg3.find('/watch?v=')+20])))
-                     if truesender.lower() in tell_list.keys():
+                     if truesender.lower() in list(tell_list.keys()):
                         try:
                            conn.privmsg(channel, "Also, "+truesender+" : "+tell_list[truesender.lower()][0])
                            del(tell_list[truesender.lower()][0])
@@ -1225,13 +1224,13 @@ while True:
             if time.time() - looptime == 0:
                pass
             else:
-               print "Took",time.time()-looptime,"Seconds to finish loop"
+               print("Took",time.time()-looptime,"Seconds to finish loop")
          
          elif data [ 1 ] [ 0 ] == '353':
             if connected == False:
                connected = True
-            users = map(lambda x: x[1:] if x[0] == "+" or x[0] == "@" else x,data[1][4].split(" "))
-            print "There are",len(users),"Users on",channel
+            users = [x[1:] if x[0] == "+" or x[0] == "@" else x for x in data[1][4].split(" ")]
+            print("There are",len(users),"Users on",channel)
             operators = []
             for potential_operator in data[1][4].split(" "):
                if potential_operator[0] == "@":
@@ -1241,7 +1240,7 @@ while True:
                   
          elif data[1][0] == "QUIT":
             sender = data[0].split("!")[0]
-            print sender+" Has now left the server"
+            print(sender+" Has now left the server")
             try:
                users.remove(sender)
                try:
@@ -1257,7 +1256,7 @@ while True:
          elif data[1][0] == "PART":
             sender = data[0].split("!")[0]
             targetchannel = data[1][1]
-            print sender+" Has now parted from the channel"
+            print(sender+" Has now parted from the channel")
             try:
                users.remove(sender)
                try:
@@ -1273,13 +1272,13 @@ while True:
          elif data[1][0] == "JOIN":
             sender = data[0].split("!")[0]
             targetchannel = data[1][1]
-            if sender.lower() in tell_list.keys():
+            if sender.lower() in list(tell_list.keys()):
                try:
                   conn.privmsg(targetchannel, sender+" : "+" | ".join(tell_list[sender.lower()]))
                   del(tell_list[sender.lower()])
                except:
                   pass
-            for useri,nicki in replacenames.items():
+            for useri,nicki in list(replacenames.items()):
                checkers = Namecheck.Namecheck_dict(sender.lower(),replacenames)
                if checkers[0]:
                   try:
@@ -1288,13 +1287,13 @@ while True:
                      else:
                         conn.privmsg(targetchannel,checkers[1]+" : I have detected a collision with a name I call you and %s who joined" %(sender))
                         del(replacenames[checkers[1]])
-                        with open("replacenames.cache","w") as pickle_save:
+                        with open("replacenames.cache","wb") as pickle_save:
                            pickle.dump(replacenames,pickle_save)
                   except AttributeError:
                      #conn.privmsg(channel,"NAME COLLISION CHECK ERROR, RELATED TO %s" %(sender))
-                     print "NAME COLLISION CHECK ERROR, RELATED TO %s" %(sender)
+                     print("NAME COLLISION CHECK ERROR, RELATED TO %s" %(sender))
                      break
-            print sender+" Has now joined"
+            print(sender+" Has now joined")
             users.append(sender)
             #####
             if ".fi" in data[0] and sender.lower() == "skibiliano":
@@ -1310,31 +1309,31 @@ while True:
                   conn.privmsg(data[1][1],"Hello! Haven't seen you here before! Happy to meet you! %s" %(appendion))
                peopleheknows[0].append(sender.lower())
                peopleheknows[1].append(data[0].split("!")[1])
-               with open("peopleheknows.cache","w") as peoplehecache:
+               with open("peopleheknows.cache","wb") as peoplehecache:
                   pickle.dump(peopleheknows,peoplehecache)
                   
          elif data[1][0] == "MODE" and data[1][2] == "+o":
             sender = data[1][3]
             targetchannel = data[1][1]
             if targetchannel == channel:
-               print sender+" Is now an operator on the main channel"
+               print(sender+" Is now an operator on the main channel")
                operators.append(sender)
             else:
-               print sender+" Is now an operator"
+               print(sender+" Is now an operator")
          elif data[1][0] == "MODE" and data[1][2] == "-o":
             sender = data[1][3]
             targetchannel = data[1][1]
             if targetchannel == channel:
-               print sender+" Is no longer an operator on the main channel"
+               print(sender+" Is no longer an operator on the main channel")
             else:
-               print sender+" Is no longer an operator"
+               print(sender+" Is no longer an operator")
             try:
                operators.remove(sender)
             except ValueError:
                pass
          elif data[1][0] == "MODE" and data[1][2] == "+h":
             sender = data[1][3]
-            print sender+" Is now an half operator"
+            print(sender+" Is now an half operator")
             halfoperators.append(sender)
          elif data[1][0] == "MODE" and data[1][2] == "-h":
             try:
@@ -1342,31 +1341,31 @@ while True:
             except ValueError:
                pass
          elif data[1][0] == "MODE" and data[1][1] == Name:
-            print "My mode is",data[1][2]
+            print("My mode is",data[1][2])
          elif data[1][0] == "MODE" and data[1][1] != Name:
             try:
                sender = data[1][3]
-               print sender,"Was modified",data[1][2]
+               print(sender,"Was modified",data[1][2])
             except IndexError:
-               print "SENDER RETRIEVAL FAILED:"+str(data)
+               print("SENDER RETRIEVAL FAILED:"+str(data))
          elif data[1][0] == "KICK" and data[1][2] == Name:
             disconnects = 99999
-            print "I have been kicked! Disconnecting entirely!"
+            print("I have been kicked! Disconnecting entirely!")
             conn.quit()
          elif data[1][0] == "KICK":
             # data[1][0] = Kick, 1 = Channel, 2 = Who, 3 = Who(?)
-            print data[1][2]+" got kicked!"
+            print(data[1][2]+" got kicked!")
          elif data[1][0] == "451" and data[1][2] == "You have not registered":
-            print Name+" hasn't been registered"
+            print(Name+" hasn't been registered")
          elif data[1][0] == "NOTICE":
             sender = data[0].split("!")[0]
-            print "NOTICE (%s): %s" %(sender,data[1][2])
+            print("NOTICE (%s): %s" %(sender,data[1][2]))
             pongtarget = sender
          elif data[1][0] == "NICK":
             origname = data[0].split("!")[0]
             newname = data[1][1]
-            print origname,"Is now",newname
-            if newname.lower() in tell_list.keys():
+            print(origname,"Is now",newname)
+            if newname.lower() in list(tell_list.keys()):
                try:
                   conn.privmsg(channel, newname+" : "+tell_list[newname.lower()][0])
                   del(tell_list[newname.lower()][0])
@@ -1417,11 +1416,11 @@ while True:
          elif data[1][0] == "252":
             #IRC Operators online
             #data[1][2]
-            print data[1][2],"Irc operators online"
+            print(data[1][2],"Irc operators online")
             pass
          elif data[1][0] == "253":
             # ['253', 'Skibot_V4', '1', 'unknown connection(s)']
-            print data[1][2],"Unknown connection(s)"
+            print(data[1][2],"Unknown connection(s)")
             pass
          elif data[1][0] == "254":
             #1391 channels formed
@@ -1433,17 +1432,17 @@ while True:
             #data[1][2] current local users
             #data[1][3] at max
             try:
-               print "Current local users:", data[1][2],"/",data[1][3]
+               print("Current local users:", data[1][2],"/",data[1][3])
             except IndexError:
-               print "Couldn't retrieve local users"
+               print("Couldn't retrieve local users")
             pass
          elif data[1][0] == "266":
             #data[1][2] current global users
             #data[1][3] at max
             try:
-               print "Current global users:", data[1][2],"/",data[1][3]
+               print("Current global users:", data[1][2],"/",data[1][3])
             except IndexError:
-               print "Couldn't retrieve global users"
+               print("Couldn't retrieve global users")
             pass
          elif data[1][0] == "315":
             #End of /who list
@@ -1460,12 +1459,12 @@ while True:
 
             if len(targetlist) > 0:
                if targetlist[0][0].lower() in data[1][6].lower():
-                  thread.start_new_thread(target,("*!*@"+data[1][4],targetlist[0][1]))
-                  print "Created a thread with", "*!*@"+data[1][4],targetlist[0][1]
+                  _thread.start_new_thread(target,("*!*@"+data[1][4],targetlist[0][1]))
+                  print("Created a thread with", "*!*@"+data[1][4],targetlist[0][1])
                   targetlist.pop(0)
                else:
-                  print targetlist[0][0].lower(), "isn't equal to?", data[1][6].lower()
-                  print targetlist
+                  print(targetlist[0][0].lower(), "isn't equal to?", data[1][6].lower())
+                  print(targetlist)
                
          elif data[1][0] == "366":
             # End of USERS
@@ -1481,7 +1480,7 @@ while True:
             pass
          elif data[1][0] == "401":
             # ('network', ['401','Botname','Channel / Nick','No such nick/channel'])
-            print data[1][2] + " Channel does not exist"
+            print(data[1][2] + " Channel does not exist")
             pass
          elif data[1][0] == "439":
             # ('irc.rizon.no', ['439', '*', 'Please wait while we process your connection.'])
@@ -1496,9 +1495,9 @@ while True:
 
          elif data[1][0] == "433":
             # Skibot name already exists.
-            print Name+" name already exists."
+            print(Name+" name already exists.")
             Name += "_"+version
-            print "New name:",Name
+            print("New name:",Name)
             duplicate_notify = True
             conn = irchat.IRC ( Network, Port, Name, "NT_"+version, "NT_"+version, "Trasen_"+version )
             for i in CORE_DATA.channels:
@@ -1509,18 +1508,18 @@ while True:
             conn.privmsg(targetchannel,"Nevermind that, I am not an operator")
             CALL_OFF = True
          elif data[1] == ["too","fast,","throttled."]:
-            print "Reconnected too fast."
-            print "Halting for 2 seconds"
+            print("Reconnected too fast.")
+            print("Halting for 2 seconds")
             sleep(2)
          elif data[1][0] == "Link":
             if data[0] == "Closing":
-               print "Link was closed"
+               print("Link was closed")
                connected = False
 #               conn.quit()
 #               break
          else:
-            print data
-            print data[1][0]
+            print(data)
+            print(data[1][0])
             pass
    else:
       if disconnects > 9000: #IT'S OVER NINE THOUSAAAAND!
@@ -1536,7 +1535,7 @@ while True:
          for i in CORE_DATA.channels:
             conn.join(i)
             sleep(0.5)
-         print "Attempted to join"
+         print("Attempted to join")
          connected = True
    except ValueError:
       try:
@@ -1545,21 +1544,22 @@ while True:
          for i in CORE_DATA.channels:
             conn.join(i)
             sleep(0.5)
-         print "Attempted to join the second time"
+         print("Attempted to join the second time")
          connected = True
       except ValueError:
-         print "Both methods failed"
+         print("Both methods failed")
    except AttributeError:
-      print "Conn is not established correctly"
+      print("Conn is not established correctly")
    except NameError:
-      print "Pongtarget isn't yet established"
+      print("Pongtarget isn't yet established")
       try:
          conn.privmsg(conn.addressquery()[0],"Pong")
          sleep(1)
          for i in CORE_DATA.channels:
             conn.join(i)
             sleep(0.5)
-         print "Attempted to join the second time"
+         print("Attempted to join the second time")
          connected = True
       except:
-         print "Both methods failed"
+         print("Both methods failed")
+

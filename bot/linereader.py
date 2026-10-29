@@ -1,43 +1,49 @@
-import os
-directory = ""
-raw = os.listdir(directory)
-extract = []
-for i in raw:
-    if i[-3:] == ".py":
-        extract.append(i)
-toc = 0
-toc3 = 0
-toc2 = 0
-print len(extract),"Files"
-lista = []
-for ob in extract:
-    count3 = 0
-    if directory == "":
-        tiedosto = open(ob,"r")
-        tiedosto2 = open(ob,"r")
-        count3 += os.path.getsize(ob)
-        toc3 += count3
-    else:
-        tiedosto = open(directory+"/"+ob,"r")
-        tiedosto2 = open(directory+"/"+ob,"r")
-        count3 += os.path.getsize(directory+"/"+ob)
-        toc3 += count3
-    count = 0
-    count2 = 0
-    line = tiedosto.readline()
-    while line != "":
-        count += 1
-        toc += 1
-        line = tiedosto.readline()
-    count2 += len(tiedosto2.read())
-    toc2 += count2
-    lista.append([count,count2,ob,count3])
-    tiedosto.close()
-    tiedosto2.close()
-print toc,"Lines in total"
-print toc2,"Letters in total"
-print toc3,"Bytes in total"
+from pathlib import Path
 
-for linecount, lettercount, filename, bytecount in lista:
-    print str(linecount)+" Lines (%s%%) || "%(str(round((float(linecount)/toc)*100,1))),str(lettercount)+" Letters (%s%%)  in file " %(str(round((float(lettercount)/toc2)*100,1)))+filename
-    print str(bytecount) + " Bytes (%s%%) "%(str(round((float(bytecount)/toc3)*100,1)))
+
+directory = ""
+
+
+def percentage(value, total):
+    return round(value / total * 100, 1) if total else 0.0
+
+
+def main():
+    root = Path(directory or ".")
+    files = sorted(
+        path for path in root.iterdir()
+        if path.is_file() and path.suffix == ".py"
+    )
+    print(len(files), "Files")
+    records = []
+
+    for path in files:
+        with path.open("r", encoding="utf-8", errors="replace") as source:
+            text = source.read()
+
+        # Match text-file iteration: only newline characters end lines.
+        line_count = text.count("\n")
+        if text and not text.endswith("\n"):
+            line_count += 1
+
+        records.append((line_count, len(text), path.name, path.stat().st_size))
+
+    total_lines = sum(record[0] for record in records)
+    total_letters = sum(record[1] for record in records)
+    total_bytes = sum(record[3] for record in records)
+
+    print(total_lines, "Lines in total")
+    print(total_letters, "Letters in total")
+    print(total_bytes, "Bytes in total")
+
+    for line_count, letter_count, filename, byte_count in records:
+        print(
+            f"{line_count} Lines ({percentage(line_count, total_lines)}%) || "
+            f"{letter_count} Letters "
+            f"({percentage(letter_count, total_letters)}%) in file {filename}"
+        )
+        print(f"{byte_count} Bytes ({percentage(byte_count, total_bytes)}%)")
+
+
+if __name__ == "__main__":
+    main()

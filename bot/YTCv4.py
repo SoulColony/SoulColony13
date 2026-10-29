@@ -1,132 +1,137 @@
-from urllib2 import urlopen
-import os
 import pickle
-from CORE_DATA import directory,no_absolute_paths
-global did_tell, no_absolute_paths
-no_absolute_paths = True
-did_tell = False
-def YTCV4(youtube_url,cache=1,debug=0):
-    global did_tell, no_absolute_paths
-    Do_not_open = True
-    __doc__ = "Cache does not affect anything, it's legacy for skibot."
-    try:
-        cut_down = youtube_url.split("watch?v=")[1].split("&")[0]
-        if len(cut_down) > 11: #Longer than normal, presume troll.
-            youtube_url.replace(cut_down,cut_down[:11])
-        elif len(cut_down) < 11: #Shorter than normal
-            pass
-    except IndexError:
-        return "Reflex: Where's the watch?v=?"
-    first_two = cut_down[0:2]
-    try:
-        if no_absolute_paths:
-            tiedosto = open("YTCache/"+first_two+".tcc","r")
-        else:
-            tiedosto = open(directory+"YTCache/"+first_two+".tcc","r")
-    except:
-        prev_dict = {}
-    else:
-        try:
-            prev_dict = pickle.load(tiedosto)
-        except EOFError: # Cache is corrupt
-            os.remove(directory+tiedosto.name)
-            print "REMOVED CORRUPT CACHE: "+tiedosto.name
-            prev_dict = {}
-        tiedosto.close() # I think this should belong here.
-        if cut_down in prev_dict.keys():
-            return prev_dict[cut_down]
-        else:
-            pass
-    try:
-        if no_absolute_paths:
-            tiedosto = open("YTCache/"+first_two+".tcc","w")
-        else:
-            tiedosto = open(directory+"YTCache/"+first_two+".tcc","w")
-    except IOError,error:
-        if len(prev_dict.keys()) > 0:
-            try:
-                tiedosto = open(directory+"YTCache/"+first_two+".tcc","w") #This is a Just In Case
-            except IOError:
-                if did_tell == False:
-                    did_tell = True
-                    return "COULD NOT ACCESS FILE "+first_two+".tcc! The next time you run this link, it checks it through the web"
-                Do_not_open = False
-            else:
-                did_tell = False
-                pickle.dump(prev_dict,tiedosto)
-                tiedosto.close()
-        else:
-            pass
-        return "Very odd error occurred: " + str(error)
-    youtube_url = youtube_url.replace("http//","http://")
-    if youtube_url.lower()[0:7] != "http://" and youtube_url[0:4] == "www.":
-        youtube_url = "http://" + youtube_url
-    if youtube_url.count("/") + youtube_url.count("\\") < 3:
-        if len(prev_dict.keys()) > 0:
-            if Do_not_open == True:   
-                tiedosto = open(directory+"YTCache/"+first_two+".tcc","w") #This is a Just In Case
-                pickle.dump(prev_dict,tiedosto)
-                tiedosto.close()
-        else:
-            pass
-        return "Reflex: Video cannot exist"
-    else:
-        if "http://" in youtube_url[0:12].lower() and youtube_url[0:7].lower() != "http://":
-            youtube_url = youtube_url[youtube_url.find("http://"):]
-        elif youtube_url[0:7].lower() != "http://":
-            if len(prev_dict.keys()) > 0:
-                if Do_not_open == True:
-                    tiedosto = open(directory+"YTCache/"+first_two+".tcc","w") #This is a Just In Case
-                    pickle.dump(prev_dict,tiedosto)
-                    tiedosto.close()
-            return "Reflex: Incorrect link start"
-    if "?feature=player_embedded&" in youtube_url:
-        youtube_url = youtube_url.replace("?feature=player_embedded&","?")
-    try:
-        website = urlopen(youtube_url)
-    except:
-        if len(prev_dict.keys()) > 0:
-            if Do_not_open == True:
-                tiedosto = open(directory+"YTCache/"+first_two+".tcc","w") #This is a Just In Case
-                pickle.dump(prev_dict,tiedosto)
-                tiedosto.close()
-        else:
-            pass
+import re
+from html.parser import HTMLParser
+from pathlib import Path
+from urllib.error import URLError
+from urllib.parse import parse_qs, urlsplit
+from urllib.request import urlopen
+
+from CORE_DATA import directory, no_absolute_paths
+
+
+class _VideoTitleParser(HTMLParser):
+    def __init__(self):
+        super().__init__(convert_charrefs=True)
+        self.title = None
+
+    def handle_starttag(self, tag, attrs):
+        if tag.lower() != "meta":
+            return
+
+        attributes = dict(attrs)
+        content = attributes.get("content")
+        if content is None:
+            return
+
+        name = attributes.get("name", "").lower()
+        property_name = attributes.get("property", "").lower()
+
+        if name == "title":
+            self.title = content
+        elif property_name == "og:title" and self.title is None:
+            self.title = content
+
+
+def YTCV4(youtube_url, cache=1, debug=0):
+    """Fetch a video title; cache is retained as a legacy argument."""
+    if not isinstance(youtube_url, str):
         return "Reflex: Incorrect link!"
-    for i in website.readlines():
-        if i.count('<meta name="title" content') == 1:
-            if type(i[30:-3]) != str:
-                if Do_not_open == True:
-                    tiedosto = open(directory+"YTCache/"+first_two+".tcc","w") #This is a Just In Case
-                    prev_dict[cut_down] = "No title for video"
-                    pickle.dump(prev_dict,tiedosto)
-                    tiedosto.close()
-                return "Video deleted"
-            else:
-                #result = i[30:-3]
-                contentvar = i.find('content="')
-                result = i[contentvar+5:i.find('">',contentvar)]
-                if "&amp;quot;" in result:
-                    result = result.replace("&amp;quot;",'"')
-                else:
-                    pass
-                if "&amp;amp;" in result:
-                    result = result.replace("&amp;amp;","&")
-                else:
-                    pass
-                if "&amp;#39;" in result:
-                    result = result.replace("&amp;#39;","'")
-                else:
-                    pass
-                if Do_not_open == True:
-                    tiedosto = open(directory+"YTCache/"+first_two+".tcc","w") #This is a Just In Case
-                    prev_dict[cut_down] = result
-                    pickle.dump(prev_dict,tiedosto)
-                    tiedosto.close()
-                return result
-    if Do_not_open == True:
-        tiedosto = open(directory+"YTCache/"+first_two+".tcc","w") #This is a Just In Case
-        prev_dict[cut_down] = "No title for video, Removed / Needs Age verification / Does not exist"
-        pickle.dump(prev_dict,tiedosto)
-        tiedosto.close()
-    return "No title for video, Removed / Needs age verification / Does not exist"
+
+    youtube_url = youtube_url.strip()
+    youtube_url = youtube_url.replace("http//", "http://", 1)
+
+    if youtube_url.lower().startswith("www."):
+        youtube_url = "https://" + youtube_url
+
+    try:
+        parsed_url = urlsplit(youtube_url)
+        if parsed_url.scheme.lower() not in ("http", "https"):
+            return "Reflex: Incorrect link start"
+
+        host = (parsed_url.hostname or "").lower()
+        if host not in (
+            "youtube.com",
+            "www.youtube.com",
+            "m.youtube.com",
+            "youtu.be",
+            "www.youtu.be",
+        ):
+            return "Reflex: Incorrect link!"
+
+        if host in ("youtu.be", "www.youtu.be"):
+            video_id = parsed_url.path.strip("/").split("/")[0]
+        else:
+            video_id = parse_qs(parsed_url.query).get("v", [""])[0]
+    except ValueError:
+        return "Reflex: Incorrect link!"
+
+    if not video_id:
+        return "Reflex: Where's the watch?v=?"
+
+    if re.fullmatch(r"[A-Za-z0-9_-]{11}", video_id) is None:
+        return "Reflex: Video cannot exist"
+
+    first_two = video_id[:2]
+    if no_absolute_paths:
+        cache_dir = Path("YTCache")
+    else:
+        cache_dir = Path(directory) / "YTCache"
+
+    cache_path = cache_dir / (first_two + ".tcc")
+    prev_dict = {}
+
+    try:
+        with cache_path.open("rb") as cache_file:
+            loaded_cache = pickle.load(cache_file, encoding="latin1")
+
+        if isinstance(loaded_cache, dict):
+            prev_dict = loaded_cache
+    except (
+        OSError,
+        EOFError,
+        pickle.UnpicklingError,
+        ValueError,
+        TypeError,
+        ImportError,
+        AttributeError,
+    ) as exc:
+        if debug:
+            print("YouTube cache read failed:", exc)
+
+    cached_title = prev_dict.get(video_id)
+    if isinstance(cached_title, str):
+        return cached_title
+
+    request_url = "https://www.youtube.com/watch?v=" + video_id
+
+    try:
+        with urlopen(request_url, timeout=15) as website:
+            encoding = website.headers.get_content_charset() or "utf-8"
+            page = website.read().decode(encoding, errors="replace")
+    except (URLError, OSError, ValueError) as exc:
+        if debug:
+            print("YouTube request failed:", exc)
+        return "Reflex: Incorrect link!"
+
+    parser = _VideoTitleParser()
+    parser.feed(page)
+    parser.close()
+
+    if not parser.title:
+        return (
+            "No title for video, Removed / Needs age verification / "
+            "Does not exist"
+        )
+
+    result = parser.title
+    prev_dict[video_id] = result
+
+    try:
+        cache_dir.mkdir(parents=True, exist_ok=True)
+        with cache_path.open("wb") as cache_file:
+            pickle.dump(prev_dict, cache_file)
+    except (OSError, pickle.PicklingError) as exc:
+        if debug:
+            print("YouTube cache write failed:", exc)
+
+    return result
