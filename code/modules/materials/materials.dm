@@ -73,6 +73,11 @@ var/list/name_to_material
 
 	var/worth = 1
 
+	// Additional material metadata.
+	var/lore_text = null
+	var/adjective_name = null
+	var/construction_difficulty = 0
+	var/sale_price = 0
 	// Shards/tables/structures
 	var/shard_type = SHARD_SHRAPNEL       // Path of debris object.
 	var/shard_icon                        // Related to above.

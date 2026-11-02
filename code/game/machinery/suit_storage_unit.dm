@@ -1083,7 +1083,7 @@
 				suit.item_state = "rig-medical_emt"
 				suit.item_state_slots[slot_r_hand_str] = "medical_voidsuit_emt"
 				suit.item_state_slots[slot_l_hand_str] = "medical_voidsuit_emt"
-		if("^%###^%$" || "Mercenary")
+		if("^%###^%$" , "Mercenary")
 			if(helmet)
 				helmet.name = "blood-red voidsuit helmet"
 				helmet.icon_state = "rig0-syndie"
